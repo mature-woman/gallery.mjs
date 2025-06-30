@@ -31,10 +31,7 @@ CSS in the `/index.css` file
 
 ## Demonstration
 ### [CodePen](https://codepen.io/mirzaev-sexy/pen/RNPdYvv)
-
 <br>
 <br>
-<br>
-
 ![Demonstration image](assets/1.png)
 ![Demonstration gif](assets/2.gif)
