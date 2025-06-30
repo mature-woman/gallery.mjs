@@ -1,6 +1,9 @@
 # gallery.mjs
 Module for creating galleries with re-ordering
 
+![Demonstration image](assets/1.png)
+![Demonstration gif](assets/2.gif)
+
 ## Example
 ```html
 <section id="wrap">
@@ -30,6 +33,4 @@ import("/js/modules/gallery.mjs").then((module) => {
 CSS in the `/index.css` file
 
 ## Demonstration
-### [CodePen](https://codepen.io/mirzaev-sexy/pen/RNPdYvv)<br><br>
-![CodePen preview](preview/1.png)
-![CodePen preview](preview/2.gif)
+### [CodePen](https://codepen.io/mirzaev-sexy/pen/RNPdYvv)
