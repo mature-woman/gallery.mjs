@@ -19,7 +19,7 @@ Module for creating galleries with re-ordering
 ```js
 import("/js/modules/gallery.mjs").then((module) => {
   // Initializing the instance
-  const instance = new module.gallery(
+  new module.gallery(
     document.getElementById("wrap"),
     document.getElementById("images"),
     document.getElementById("gallery"),
