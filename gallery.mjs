@@ -201,7 +201,7 @@ export default class gallery {
           // Found the wrap
 
           // Deleting class about targeting
-          wrap.target.classList.remove("target");
+          wrap.classList.remove("target");
         }
       }
     ],
