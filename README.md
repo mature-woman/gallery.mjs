@@ -35,3 +35,4 @@ CSS in the `/index.css` file
 
 ![Demonstration image](assets/1.png)
 ![Demonstration gif](assets/2.gif)
+![Demonstration gif](assets/3.gif)
