@@ -10,7 +10,7 @@
  * @public
  *
  * @example
- * import gallery from "https://codepen.io/mirzaev-sexy/pen/RNPdYvv.js";
+ * import gallery from "https://git.svoboda.works/mirzaev/gallery.mjs/raw/branch/stable/gallery.mjs";
  *
  * // Initializing the instance
  * const instance = new gallery(
@@ -42,6 +42,20 @@ export default class gallery {
   #wrap;
 
   /**
+   * @name Wrap (get)
+   *
+   * @description
+   * Wrap for the gallery
+   *
+   * @return {HTMLElement}
+   *
+   * @public
+   */
+  get wrap() {
+    return this.#wrap;
+  }
+
+  /**
    * @name Input
    *
    * @description
@@ -54,6 +68,20 @@ export default class gallery {
   #input;
 
   /**
+   * @name Input (get)
+   *
+   * @description
+   * Input for importing images
+   *
+   * @return {HTMLInputElement}
+   *
+   * @public
+   */
+  get input() {
+    return this.#input;
+  }
+
+  /**
    * @name Gallery
    *
    * @description
@@ -64,6 +92,20 @@ export default class gallery {
    * @protected
    */
   #gallery;
+
+  /**
+   * @name Gallery (get)
+   *
+   * @description
+   * Wrap for images <img> elements (`flex-flow: row wrap`)
+   *
+   * @return {HTMLElement}
+   *
+   * @public
+   */
+  get gallery() {
+    return this.#gallery;
+  }
 
   /**
    * @name Identifiers
@@ -120,6 +162,16 @@ export default class gallery {
   };
 
   /**
+   * @name Allowed
+   *
+   * @description
+   * Regular expression for checking matching to images extensions (not MIME-types)
+   *
+   * @type {RegExp}
+   */
+  allowed = /\.(jpe?g|png|gif|webp)$/i;
+
+  /**
    * @name Dragged
    *
    * @description
@@ -132,6 +184,20 @@ export default class gallery {
   #dragged;
 
   /**
+   * @name Dragged (get)
+   *
+   * @description
+   * Buffer of currently dragged wrap identifier
+   *
+   * @type {string|number}
+   *
+   * @public
+   */
+  get dragged() {
+    return this.#dragged;
+  }
+
+  /**
    * @name Events
    *
    * @type {Map}
@@ -140,103 +206,156 @@ export default class gallery {
    */
   #events = new Map([
     [
-      "dragstart",
-      (event) => {
-        // Disabling default actions
-        this.#dragged = event.target.getAttribute("id");
+      "system",
+      new Map([
+        [
+          "dragstart",
+          (event) => {
+            // Disabling default actions
+            this.#dragged = event.target.getAttribute("id");
 
-        // Allowing moving
-        event.dataTransfer.effectAllowed = "move";
-      }
+            // Allowing moving
+            event.dataTransfer.effectAllowed = "move";
+
+            // Processing the modification event
+            this.#events.get("moving").get("dragstart")(event);
+          }
+        ],
+
+        [
+          "dragover",
+          (event) => {
+            // Disabling default actions
+            event.preventDefault();
+
+            // Allowing moving
+            event.dataTransfer.dropEffect = "move";
+
+            // Processing the modification event
+            this.#events.get("moving").get("dragover")(event);
+          }
+        ],
+
+        [
+          "dragenter",
+          (event) => {
+            // Searching for the wrap
+            const wrap = event.target.closest("div.image");
+
+            if (wrap?.getAttribute("id") !== this.#dragged) {
+              // Wrap is not currently draggable wrap
+
+              // Writing class about targeting
+              wrap?.classList.add("target");
+            }
+
+            // Processing the modification event
+            this.#events.get("moving").get("dragenter")(event);
+          }
+        ],
+
+        [
+          "dragleave",
+          (event) => {
+            // Searching for the closest parent wrap
+            const wrap = event.target.closest("div.image");
+
+            if (wrap instanceof HTMLElement) {
+              // Found the wrap
+
+              // Deleting class about targeting
+              wrap.classList.remove("target");
+            }
+
+            // Processing the modification event
+            this.#events.get("moving").get("dragleave")(event);
+          }
+        ],
+
+        [
+          "dragend",
+          (event) => {
+            // Searching for the closest parent wrap
+            const wrap = event.target.closest("div.image");
+
+            if (wrap instanceof HTMLElement) {
+              // Found the wrap
+
+              // Deleting class about targeting
+              wrap.classList.remove("target");
+            }
+
+            // Processing the modification event
+            this.#events.get("moving").get("dragend")(event);
+          }
+        ],
+
+        [
+          "drop",
+          (event) => {
+            // Searching for the closest parent wrap
+            const wrap = event.target.closest("div.image");
+
+            if (
+              wrap instanceof HTMLElement &&
+              wrap.getAttribute("id") &&
+              wrap.getAttribute("id") !== this.#dragged
+            ) {
+              // Found the wrap and has it identifier and it not currently draggable wrap
+
+              // Deleting class about targeting from every wrap
+              this.#gallery
+                .querySelector("div.image.target")
+                ?.classList.remove("target");
+
+              // Initializing indexes of wraps in the identifiers registry
+              const from = this.#identifiers.indexOf(this.#dragged);
+              const to = this.#identifiers.indexOf(wrap.getAttribute("id"));
+
+              // Swapping wraps
+              [this.#identifiers[from], this.#identifiers[to]] = [
+                this.#identifiers[to],
+                this.#identifiers[from]
+              ];
+            }
+
+            // Processing the modification event
+            this.#events.get("moving").get("drop")(event);
+          }
+        ]
+      ])
     ],
 
     [
-      "dragover",
-      (event) => {
-        // Disabling default actions
-        event.preventDefault();
+      "moving",
+      new Map([
+        ["dragstart", (event) => {}],
 
-        // Allowing moving
-        event.dataTransfer.dropEffect = "move";
-      }
+        ["dragover", (event) => {}],
+
+        ["dragenter", (event) => {}],
+
+        ["dragleave", (event) => {}],
+
+        ["dragend", (event) => {}],
+
+        ["drop", (event) => {}]
+      ])
     ],
 
-    [
-      "dragenter",
-      (event) => {
-        // Searching for the wrap
-        const wrap = event.target.closest("div.image");
-
-        if (wrap?.getAttribute("id") !== this.#dragged) {
-          // Wrap is not currently draggable wrap
-
-          // Writing class about targeting
-          wrap?.classList.add("target");
-        }
-      }
-    ],
-
-    [
-      "dragleave",
-      (event) => {
-        // Searching for the closest parent wrap
-        const wrap = event.target.closest("div.image");
-
-        if (wrap instanceof HTMLElement) {
-          // Found the wrap
-
-          // Deleting class about targeting
-          wrap.classList.remove("target");
-        }
-      }
-    ],
-
-    [
-      "dragend",
-      (event) => {
-        // Searching for the closest parent wrap
-        const wrap = event.target.closest("div.image");
-
-        if (wrap instanceof HTMLElement) {
-          // Found the wrap
-
-          // Deleting class about targeting
-          wrap.classList.remove("target");
-        }
-      }
-    ],
-
-    [
-      "drop",
-      (event) => {
-        // Searching for the closest parent wrap
-        const wrap = event.target.closest("div.image");
-
-        if (
-          wrap instanceof HTMLElement &&
-          wrap.getAttribute("id") &&
-          wrap.getAttribute("id") !== this.#dragged
-        ) {
-          // Found the wrap and has it identifier and it not currently draggable wrap
-
-          // Deleting class about targeting from every wrap
-          this.#gallery
-            .querySelector("div.image.target")
-            ?.classList.remove("target");
-
-          // Initializing indexes of wraps in the identifiers registry
-          const from = this.#identifiers.indexOf(this.#dragged);
-          const to = this.#identifiers.indexOf(wrap.getAttribute("id"));
-
-          // Swapping wraps
-          [this.#identifiers[from], this.#identifiers[to]] = [
-            this.#identifiers[to],
-            this.#identifiers[from]
-          ];
-        }
-      }
-    ]
+    ["wrap", new Map([["delete", (event) => {}]])]
   ]);
+
+  /**
+   * @name Events (get)
+   *
+   * @type {Map}
+   *
+   * @public
+   */
+  get events() {
+    return this.#events;
+  }
 
   /**
    * @name Constructor
@@ -248,7 +367,7 @@ export default class gallery {
    * @param {HTMLInputElement} input The input <input> element
    * @param {HTMLElement} gallery The gallery element
    * @param {boolean} [inject=false] Write the instance into the wrap element?
-   **/
+   */
   constructor(wrap, input, gallery, inject = false) {
     if (wrap instanceof HTMLElement) {
       // Initialized the wrap element
@@ -292,7 +411,7 @@ export default class gallery {
    * Initialize the identifiers registry proxy
    */
   proxy() {
-    // Initializing the identifiers registry
+    // Initializing the identifiers registry proxy
     this.#identifiers = new Proxy([], {
       set: (target, property, value) => {
         // Postponing the update with a microtask
@@ -300,14 +419,10 @@ export default class gallery {
           // Deinitializing the update promise
           this.#update = null;
 
-          // Generating the order row (can be deleted without any problems)
-          document.getElementById("order").textContent =
-            "Order: " + target.join(", ");
-
           // Re-ordering wraps <div> elements by the identifiers registry
-          target.forEach((identifier) => {
-            this.#gallery.appendChild(document.getElementById(identifier));
-          });
+          target.forEach((identifier) =>
+            this.#gallery.appendChild(document.getElementById(identifier))
+          );
         });
 
         // Regenerating the identifiers registry and return (success)
@@ -323,6 +438,7 @@ export default class gallery {
    * Sort images in ascending order
    */
   ascending() {
+    // Sorting
     this.#identifiers.sort((a, b) => a - b);
   }
 
@@ -334,8 +450,9 @@ export default class gallery {
    */
   start() {
     // Initializing events listeners
-    for (const [event, handler] of this.#events)
+    for (const [event, handler] of this.#events.get("system")) {
       this.#gallery.addEventListener(event, handler);
+    }
   }
 
   /**
@@ -346,8 +463,74 @@ export default class gallery {
    */
   stop() {
     // Deinitializing events listeners
-    for (const [event, handler] of this.#events)
+    for (const [event, handler] of this.#events.get("system")) {
       this.#gallery.removeEventListener(event, handler);
+    }
+  }
+
+  /**
+   * @name Generate
+   *
+   * @description
+   * Create the wrap with images and buttons
+   *
+   * @param {number|string} order Number for generating identifiers
+   * @param {(File|string)} target The image for `srt` attribute
+   *
+   * @returns {HTMLElement} Created wrap <div> element with images and buttons
+   */
+  generate(order, target) {
+    // Creating the wrap <div> element
+    const wrap = document.createElement("div");
+    wrap.classList.add("image");
+    wrap.setAttribute("id", this.prefixes.wrap + order);
+    wrap.setAttribute("draggable", true);
+
+    // Creating the button <button> element
+    const button = document.createElement("button");
+    button.classList.add("delete");
+    button.addEventListener("click", (event) => {
+      // Deleting the identifier
+
+      // Initializing index of the wrap
+      const index = this.#identifiers.indexOf(this.prefixes.wrap + order);
+
+      if (index > -1) {
+        // Initialized index of the wrap
+
+        // Deleting identifier of the wrap from the identifiers registry
+        this.#identifiers.splice(index, 1);
+
+        // Deleting the wrap
+        wrap.remove();
+
+        // Processing the `ondelete` function
+        this.#events.get("wrap")?.get("delete")(event);
+      }
+    });
+
+    // Creating the trash icon <i> element
+    const trash = document.createElement("i");
+    trash.classList.add("icon", "trash");
+
+    // Creating the image <img> element
+    const image = document.createElement("img");
+    image.setAttribute("id", this.prefixes.image + order);
+    image.setAttribute("draggable", false);
+    image.setAttribute(
+      "src",
+      target instanceof File
+        ? window.URL.createObjectURL(target)
+        : target + "?updated=" + Date.now()
+    );
+
+    // Assembling
+    wrap.appendChild(image);
+    button.appendChild(trash);
+    wrap.appendChild(button);
+
+    // Exit (success)
+    return wrap;
   }
 
   /**
@@ -356,7 +539,7 @@ export default class gallery {
    * @description
    * Creating images <img> elements by loaded images
    *
-   * @param {FileList} files Loaded images
+   * @param {(FileList|object} files Files for importing (can be array of URL`s)
    */
   import(files) {
     // Stopping events handlers
@@ -368,56 +551,137 @@ export default class gallery {
     // Deleting deprecated images from the gallery
     this.#gallery.innerHTML = "";
 
-    for (let i = 0; i < files.length; i++) {
-      // Iterating over imported images
+    for (const [index, file] of files instanceof FileList
+      ? Object.entries(files)
+      : files) {
+      // Iterating over files
 
-      // Creating the wrap <div> element
-      const wrap = document.createElement("div");
-      wrap.classList.add("image");
-      wrap.setAttribute("id", this.prefixes.wrap + i);
-      wrap.setAttribute("draggable", true);
+      if (file) {
+        // Initialized the file
 
-      // Creating the button <button> element
-      const button = document.createElement("button");
-      button.classList.add("delete");
-      button.addEventListener("click", (event) => {
-        // Deleting the identifier
+        // Initializing the file extension
+        const extension = file.name ?? file.match(/\.\w{3,4}$/)[0];
 
-        // Initializing index of the wrap
-        const index = this.#identifiers.indexOf(this.prefixes.wrap + i);
+        if (this.allowed.test(extension)) {
+          // Allowed the file
 
-        if (index > -1) {
-          // Initialized index of the wrap
+          // Generating HTML elements
+          const wrap = this.generate(index, file);
 
-          // Deleting identifier of the wrap from the identifiers registry
-          this.#identifiers.splice(index, 1);
+          // Injecting HTML elements into the document
+          this.#gallery.appendChild(wrap);
 
-          // Deleting the wrap
-          wrap.remove();
+          // Writing into the identifiers registry
+          this.#identifiers.push(wrap.getAttribute("id"));
         }
-      });
-
-      // Creating the trash icon <i> element
-      const trash = document.createElement("i");
-      trash.classList.add("icon", "trash");
-
-      // Creating the image <img> element
-      const image = document.createElement("img");
-      image.setAttribute("id", this.prefixes.image + i);
-      image.setAttribute("draggable", false);
-      image.setAttribute("src", URL.createObjectURL(files[i]));
-
-      // Writing into the gallery
-      button.appendChild(trash);
-      wrap.appendChild(image);
-      wrap.appendChild(button);
-      this.#gallery.appendChild(wrap);
-
-      // Writing into the identifiers registry
-      this.#identifiers.push(wrap.getAttribute("id"));
+      }
     }
 
     // Starting events handlers
     this.start();
+  }
+
+  /**
+   * @name Export
+   *
+   * @description
+   * Collect images and convert to Blob object or Base64 string
+   *
+   * @param {(string|number)} [identifier] Identifier of the wrap
+   * @param {boolean} [base64=false] Convert to Base64 string instead of Blob object
+   *
+   * @returns {Promise}
+   */
+  async export(identifier, base64 = false) {
+    // Initializing the reader
+    const reader = new FileReader();
+
+    if (typeof identifier === "string" || typeof identifier === "number") {
+      // Requested specified image
+
+      // Initializing the image
+      const image = this.#gallery.querySelector(
+        "div.image#" + CSS.escape(identifier) + ">img"
+      );
+
+      if (image instanceof HTMLImageElement) {
+        // Initialized the image <img> element
+
+        // Initializing the image content
+        const content = image.getAttribute("src")?.split("?")[0];
+
+        try {
+          if (new URL(content).protocol === "blob:") {
+            // Blob
+
+            // Exit (success/fail)
+            return new Promise((resolve) => {
+              // Initializing listener for the "LoadEnd" event
+              reader.onloadend = () => resolve(reader.result);
+
+              fetch(content)
+                .then((r) => r.blob())
+                .then((value) => {
+                  // Converted "blob:..." string to Blob object
+
+                  if (base64) {
+                    // Base64 string
+
+                    // Converting blob to base64
+                    reader.readAsDataURL(value);
+                  } else {
+                    // Blob object
+
+                    // Exit (success)
+                    resolve(value);
+                  }
+                });
+            });
+          } else {
+            // Base64 or HTTP
+
+            // Exit (success)
+            return content;
+          }
+        } catch {
+          // Base64 or HTTP
+
+          // Exit (success)
+          return content;
+        }
+      }
+    } else {
+      // Requested all images
+
+      // Initializing wraps
+      const wraps = this.#gallery.querySelectorAll("div.image");
+
+      if (wraps.length > 0) {
+        // Initialized wraps
+
+        // Initialize the converted images buffer
+        const converted = [];
+
+        for (const wrap of wraps) {
+          // Iterating over images
+
+          // Initializing the wrap identifier
+          const identifier = wrap.getAttribute("id");
+
+          if (
+            typeof identifier === "string" ||
+            typeof identifier === "number"
+          ) {
+            // Initialized the wrap identifier
+
+            // Converting the image and writing into the converted images buffer
+            converted.push((await this.export(identifier)) ?? null);
+          }
+        }
+
+        // Exit (success)
+        return converted;
+      }
+    }
   }
 }
