@@ -587,9 +587,9 @@ export default class gallery {
 		const imported = new Set();
 
 		// Initializing the registry of files
-		const registry = files instanceof FileList ? Object.entries(files) : files;
+		const registry = files instanceof FileList ? Object.entries(files) : [...files];
 
-		for (const [index, file] of reverse ? registry.reverse() : reverse) {
+		for (const [index, file] of reverse ? registry.reverse() : registry) {
 			// Iterating over files
 
 			if (file) {
